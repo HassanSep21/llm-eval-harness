@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+sqlalchemy[asyncio]
+asyncpg
+alembic
+pydantic
+pydantic-settings
+loguru
+httpx
+python-dotenv
+pytest
+pytest-asyncio
+rouge-score
