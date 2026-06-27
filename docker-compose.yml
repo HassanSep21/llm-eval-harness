@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U eval_user"]
+      test: ["CMD-SHELL", "pg_isready -U eval_user -d llm_eval"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -40,6 +40,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://eval_user:${POSTGRES_PASSWORD}@db:5432/llm_eval
     depends_on:
       db:
         condition: service_healthy
@@ -50,4 +52,4 @@ services:
 volumes:
   postgres_data:
   ollama_data:
-  
+
