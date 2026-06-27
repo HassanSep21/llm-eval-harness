@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ---- Dataset ----
@@ -35,8 +35,7 @@ class TestCaseResponse(BaseModel):
     dataset_id: uuid.UUID
     input: str
     expected_output: str | None
-    metadata: dict
+    metadata: dict = Field(validation_alias="case_metadata")
     created_at: datetime
 
-    model_config = {"from_attributes": True}
-    
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
