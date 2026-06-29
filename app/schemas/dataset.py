@@ -22,6 +22,12 @@ class DatasetResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DatasetUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    tags: list[str] | None = None
+
+
 # ---- TestCase ----
 
 class TestCaseCreate(BaseModel):
@@ -39,3 +45,9 @@ class TestCaseResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+
+class TestCaseUpdate(BaseModel):
+    input: str | None = None
+    expected_output: str | None = None
+    metadata: dict | None = None
