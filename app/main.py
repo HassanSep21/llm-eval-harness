@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.datasets import router as datasets_router
 from app.core.logging import configure_logging
+from app.api.backends import router as backends_router
 
 
 @asynccontextmanager
@@ -25,3 +26,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+app.include_router(backends_router)
+
