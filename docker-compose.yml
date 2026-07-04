@@ -26,7 +26,7 @@ services:
               count: all
               capabilities: [gpu]
     volumes:
-      - ollama_data:/root/.ollama
+      - ollama:/root/.ollama
     ports:
       - "11434:11434"
     restart: unless-stopped
@@ -51,5 +51,5 @@ services:
 
 volumes:
   postgres_data:
-  ollama_data:
-
+  ollama:
+    external: true
