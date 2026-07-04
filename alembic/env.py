@@ -10,7 +10,7 @@ from alembic import context
 from app.core.config import get_settings
 from app.core.db import Base
 from app.models.dataset import Dataset, TestCase  # noqa: F401 — imported so Base.metadata sees them
-
+from app.models import dataset, run  # noqa: F401 — registers all ORM models with Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
