@@ -2,9 +2,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.runs import router as runs_router
 from app.api.datasets import router as datasets_router
 from app.api.backends import router as backends_router
-from app.api.runs import router as runs_router
+from app.api.regression import router as regression_router
 from app.core.logging import configure_logging
 from app.models import run # noqa: F401 — ensures EvalRun/TestCaseResult register with Base.metadata
 
@@ -30,3 +31,4 @@ app = create_app()
 
 app.include_router(backends_router)
 app.include_router(runs_router)
+app.include_router(regression_router)
