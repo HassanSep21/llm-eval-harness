@@ -1,15 +1,59 @@
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.backends.groq import GroqBackend
+from app.backends.ollama import OllamaBackend
+from app.models.dataset import Dataset, TestCase
 from app.models.run import EvalRun, TestCaseResult
-from app.schemas.run import EvalRunCreate, EvalRunResponse, TestCaseResultResponse
+from app.schemas.run import EvalRunCreate, EvalRunResponse, JudgeConfig, TestCaseResultResponse
 from app.services import runner
 
 router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+async def _validate_run_request(payload: EvalRunCreate, db: AsyncSession) -> None:
+    """Synchronous preflight checks — raises HTTPException on any failure.
+
+    Catches problems that are knowable before the run starts so callers
+    get an immediate 400/503 rather than a run that fails seconds later.
+    """
+    # 1. Dataset exists and has test cases
+    dataset = await db.get(Dataset, payload.dataset_id)
+    if dataset is None:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    count_result = await db.execute(
+        select(func.count()).where(TestCase.dataset_id == payload.dataset_id)
+    )
+    case_count = count_result.scalar()
+    if case_count == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Dataset has no test cases — add at least one before running an evaluation",
+        )
+    
+    config = payload.judge_config
+
+    # 2. Groq key present if Groq is involved
+    if config.primary_backend == "groq" or config.secondary_backend == "groq":
+        try:
+            await GroqBackend().health_check()
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
+    # 3. Ollama reachable if Ollama is involved
+    if config.primary_backend == "ollama" or config.secondary_backend == "ollama":
+        try:
+            await OllamaBackend().health_check()
+        except Exception:
+            raise HTTPException(
+                status_code=503,
+                detail="Ollama is unreachable — ensure the Ollama container is running",
+            )
 
 
 @router.post("", response_model=EvalRunResponse, status_code=status.HTTP_201_CREATED)
@@ -18,6 +62,8 @@ async def create_run(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    await _validate_run_request(payload, db)
+
     run = EvalRun(
         dataset_id=payload.dataset_id,
         target_model=payload.target_model,

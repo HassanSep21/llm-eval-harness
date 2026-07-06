@@ -36,3 +36,10 @@ class OllamaBackend(LLMBackend):
             response.raise_for_status()
             return [m["name"] for m in response.json().get("models", [])]
         
+    
+    async def health_check(self) -> None:
+        """Raises httpx.HTTPError if Ollama is unreachable."""
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{self._base_url}/api/tags")
+            response.raise_for_status()
+        

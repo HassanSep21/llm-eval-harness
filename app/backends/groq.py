@@ -45,3 +45,9 @@ class GroqBackend(LLMBackend):
     async def list_models(self) -> list[str]:
         return self._KNOWN_MODELS
     
+
+    async def health_check(self) -> None:
+        """Raises ValueError if the API key is not configured."""
+        if not self._api_key:
+            raise ValueError("GROQ_API_KEY is not set in environment")
+    
