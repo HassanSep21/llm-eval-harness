@@ -1,4 +1,4 @@
-# llm-eval-harness
+# LLL Evaluation Harness
 
 An API-first LLM evaluation framework for systematic, reproducible scoring of LLM outputs across multiple quality dimensions — with regression tracking to detect what changed between runs.
 
