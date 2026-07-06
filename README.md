@@ -400,6 +400,5 @@ llm-eval-harness/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── pytest.ini
-├── .env.example
 └── requirements.txt
 ```
