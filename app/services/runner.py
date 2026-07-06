@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 
 from loguru import logger
 from sqlalchemy import select
@@ -156,7 +156,7 @@ async def execute(run_id: uuid.UUID) -> None:
 
             run.status = RunStatus.completed
             run.calibration_report = calibration_report
-            run.completed_at = datetime.utcnow()
+            run.completed_at = datetime.now(UTC)
             await session.commit()
             logger.info(f"Run {run_id} completed")
 

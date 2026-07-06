@@ -24,11 +24,10 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(datasets_router)
+    app.include_router(runs_router)
+    app.include_router(backends_router)
+    app.include_router(regression_router)
     return app
 
 
 app = create_app()
-
-app.include_router(backends_router)
-app.include_router(runs_router)
-app.include_router(regression_router)
