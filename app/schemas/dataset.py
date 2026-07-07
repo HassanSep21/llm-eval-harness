@@ -17,6 +17,7 @@ class DatasetResponse(BaseModel):
     name: str
     description: str | None
     tags: list[str] | None
+    test_case_count: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

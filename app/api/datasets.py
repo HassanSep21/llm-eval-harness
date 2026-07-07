@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.db import get_db
 from app.models.dataset import Dataset, TestCase
@@ -61,6 +61,20 @@ async def create_test_case(
     return test_case
 
 
+@router.get("/{dataset_id}/test-cases", response_model=list[TestCaseResponse])
+async def list_test_cases(dataset_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    dataset = await db.get(Dataset, dataset_id)
+    if dataset is None:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+
+    result = await db.execute(
+        select(TestCase)
+        .where(TestCase.dataset_id == dataset_id)
+        .order_by(TestCase.created_at.desc())
+    )
+    return result.scalars().all()
+
+
 @router.get("/{dataset_id}/test-cases/{test_case_id}", response_model=TestCaseResponse)
 async def get_test_case(
     dataset_id: uuid.UUID,
@@ -79,7 +93,19 @@ async def list_datasets(tag: str | None = None, db: AsyncSession = Depends(get_d
     if tag:
         query = query.where(Dataset.tags.contains([tag]))
     result = await db.execute(query)
-    return result.scalars().all()
+    datasets = result.scalars().all()
+
+    if datasets:
+        count_result = await db.execute(
+            select(TestCase.dataset_id, func.count(TestCase.id))
+            .where(TestCase.dataset_id.in_([d.id for d in datasets]))
+            .group_by(TestCase.dataset_id)
+        )
+        counts = dict(count_result.all())
+        for dataset in datasets:
+            dataset.test_case_count = counts.get(dataset.id, 0)
+
+    return datasets
 
 
 @router.patch("/{dataset_id}", response_model=DatasetResponse)

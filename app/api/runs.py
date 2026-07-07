@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +8,7 @@ from app.core.db import get_db
 from app.backends.groq import GroqBackend
 from app.backends.ollama import OllamaBackend
 from app.models.dataset import Dataset, TestCase
-from app.models.run import EvalRun, TestCaseResult
+from app.models.run import EvalRun, TestCaseResult, RunStatus
 from app.schemas.run import EvalRunCreate, EvalRunResponse, JudgeConfig, TestCaseResultResponse
 from app.services import runner
 
@@ -94,4 +94,19 @@ async def get_run_results(run_id: uuid.UUID, db: AsyncSession = Depends(get_db))
     result = await db.execute(
         select(TestCaseResult).where(TestCaseResult.run_id == run_id)
     )
+    return result.scalars().all()
+
+
+@router.get("", response_model=list[EvalRunResponse])
+async def list_runs(
+    status_filter: RunStatus | None = Query(default=None, alias="status"),
+    dataset_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(EvalRun).order_by(EvalRun.created_at.desc())
+    if status_filter:
+        query = query.where(EvalRun.status == status_filter)
+    if dataset_id:
+        query = query.where(EvalRun.dataset_id == dataset_id)
+    result = await db.execute(query)
     return result.scalars().all()
