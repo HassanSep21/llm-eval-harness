@@ -19,6 +19,7 @@ export default function RunResultsPage() {
   const navigate = useNavigate()
 
   const [run, setRun] = useState(null)
+  const [testCaseMap, setTestCaseMap] = useState({})
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
   const [expanded, setExpanded] = useState({})
@@ -35,9 +36,16 @@ export default function RunResultsPage() {
 
         if (runData.status === 'completed' || runData.status === 'failed') {
           clearInterval(intervalRef.current)
-          if (runData.status === 'completed') {
-            const resultsData = await api.getRunResults(id)
-            if (!cancelled) setResults(resultsData)
+        }
+
+        if (runData.status === 'completed') {
+          const [resultsData, testCases] = await Promise.all([
+            api.getRunResults(id),
+            api.listTestCases(runData.dataset_id),
+          ])
+          if (!cancelled) {
+            setResults(resultsData)
+            setTestCaseMap(Object.fromEntries(testCases.map((tc) => [tc.id, tc])))
           }
         }
       } catch (err) {
@@ -143,6 +151,7 @@ export default function RunResultsPage() {
                 <ResultRow
                   key={r.id}
                   result={r}
+                  testCase={testCaseMap[r.test_case_id]}
                   isExpanded={!!expanded[r.id]}
                   onToggle={() => toggleExpanded(r.id)}
                 />
@@ -155,7 +164,7 @@ export default function RunResultsPage() {
   )
 }
 
-function ResultRow({ result, isExpanded, onToggle }) {
+function ResultRow({ result, testCase, isExpanded, onToggle }) {
   return (
     <div
       className={`p-4 border rounded bg-white ${
@@ -173,7 +182,7 @@ function ResultRow({ result, isExpanded, onToggle }) {
       )}
 
       <p className="text-sm text-gray-800 mb-1">
-        <span className="font-medium">Input:</span> {truncate(result.actual_output && result.actual_output, 200) || '—'}
+        <span className="font-medium">Input:</span> {testCase?.input ?? '—'}
       </p>
 
       <p className="text-sm text-gray-800 mb-1">
