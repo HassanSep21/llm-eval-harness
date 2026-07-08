@@ -57,6 +57,10 @@ async def execute(run_id: uuid.UUID) -> None:
                 model=config.secondary_model or "",
             )
 
+        # Target model always runs locally via Ollama — Groq/other backends are
+        # judge-only in this architecture, never the model under test.
+        target_backend = OllamaBackend()
+
         # Load test cases
         result = await session.execute(
             select(TestCase).where(TestCase.dataset_id == run.dataset_id)
@@ -84,7 +88,6 @@ async def execute(run_id: uuid.UUID) -> None:
 
                 try:
                     # Call the target model
-                    target_backend = _build_backend(config.primary_backend)
                     actual_output = await target_backend.generate(
                         messages=[{"role": "user", "content": tc.input}],
                         model=run.target_model,

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     # Groq (primary judge)
     groq_api_key: str
-    groq_judge_model: str = "llama-3.1-70b-versatile"
+    groq_judge_model: str = "llama-3.3-70b-versatile"
 
     # Gemini (optional, future backend)
     gemini_api_key: str | None = None
