@@ -284,6 +284,7 @@ function CreateTestCaseForm({ datasetId, onCreated }) {
   const [expectedOutput, setExpectedOutput] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [pattern, setPattern] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -297,6 +298,7 @@ function CreateTestCaseForm({ datasetId, onCreated }) {
       await api.createTestCase(datasetId, {
         input: input.trim(),
         expected_output: expectedOutput.trim() || null,
+        metadata: pattern.trim() ? { pattern: pattern.trim() } : null,
       })
       setInput('')
       setExpectedOutput('')
@@ -330,6 +332,17 @@ function CreateTestCaseForm({ datasetId, onCreated }) {
           className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
           rows={2}
           placeholder="We offer a 30-day money-back guarantee..."
+        />
+      </div>
+      <div className="mb-3">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Regex pattern (optional — only needed for the regex_match metric)
+        </label>
+        <input
+          value={pattern}
+          onChange={(e) => setPattern(e.target.value)}
+          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm font-mono"
+          placeholder="^\d+$"
         />
       </div>
       <button

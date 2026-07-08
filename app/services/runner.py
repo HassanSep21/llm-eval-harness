@@ -99,6 +99,7 @@ async def execute(run_id: uuid.UUID) -> None:
                         metric_result = metric.evaluate(
                             actual_output=actual_output,
                             expected_output=tc.expected_output,
+                            **(tc.case_metadata or {}),
                         )
                         metric_scores[metric_name] = metric_result.model_dump()
 
