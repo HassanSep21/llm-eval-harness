@@ -14,6 +14,7 @@ export default function NewRunPage() {
 
   const [datasetId, setDatasetId] = useState('')
   const [targetModel, setTargetModel] = useState('')
+  const [systemPrompt, setSystemPrompt] = useState('')
   const [dualJudge, setDualJudge] = useState(true)
   const [metrics, setMetrics] = useState(DEFAULT_METRICS)
 
@@ -59,6 +60,7 @@ export default function NewRunPage() {
       const run = await api.createRun({
         dataset_id: datasetId,
         target_model: targetModel,
+        system_prompt: systemPrompt.trim() || null,
         judge_config: {
           primary_backend: 'groq',
           secondary_backend: dualJudge ? 'ollama' : null,
@@ -138,6 +140,19 @@ export default function NewRunPage() {
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            System prompt (optional)
+          </label>
+          <textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            rows={3}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+            placeholder="You are a helpful customer support assistant..."
+          />
         </div>
 
         <div className="flex items-center gap-2">

@@ -87,9 +87,14 @@ async def execute(run_id: uuid.UUID) -> None:
                 low_confidence = False
 
                 try:
+                    messages = []
+                    if run.system_prompt:
+                        messages.append({"role": "system", "content": run.system_prompt})
+                    messages.append({"role": "user", "content": tc.input})
+
                     # Call the target model
                     actual_output = await target_backend.generate(
-                        messages=[{"role": "user", "content": tc.input}],
+                        messages=messages,
                         model=run.target_model,
                     )
 

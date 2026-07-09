@@ -31,6 +31,7 @@ class EvalRunResponse(BaseModel):
     error: str | None
     created_at: datetime
     completed_at: datetime | None
+    system_prompt: str | None = None
 
     model_config = {"from_attributes": True}
 

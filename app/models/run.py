@@ -29,7 +29,8 @@ class EvalRun(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-
+    system_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
     results: Mapped[list["TestCaseResult"]] = relationship(
         back_populates="run", cascade="all, delete-orphan"
     )
