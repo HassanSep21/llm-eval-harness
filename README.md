@@ -374,8 +374,8 @@ Adding a new metric requires only implementing the `Metric` ABC and calling `reg
 
 ```bash
 # Database
-POSTGRES_PASSWORD=changeme
-DATABASE_URL=postgresql+asyncpg://eval_user:changeme@db:5432/llm_eval
+POSTGRES_PASSWORD=yourpassword
+DATABASE_URL=postgresql+asyncpg://eval_user:examplename@db:5432/llm_eval
 
 # Ollama
 OLLAMA_BASE_URL=http://ollama:11434
