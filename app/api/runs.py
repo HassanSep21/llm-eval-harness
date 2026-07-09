@@ -67,6 +67,7 @@ async def create_run(
     run = EvalRun(
         dataset_id=payload.dataset_id,
         target_model=payload.target_model,
+        system_prompt=payload.system_prompt,
         judge_config=payload.judge_config.model_dump(),
     )
     db.add(run)

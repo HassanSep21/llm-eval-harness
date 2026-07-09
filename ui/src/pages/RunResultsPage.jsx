@@ -234,17 +234,35 @@ function ResultRow({ result, testCase, isExpanded, onToggle }) {
 const DIMENSIONS = ['correctness', 'tone', 'faithfulness', 'conciseness']
 
 function JudgeScoreBlock({ label, score }) {
+  const [showReasons, setShowReasons] = useState(false)
+
   return (
     <div className="text-xs">
-      <p className="font-medium text-gray-500 uppercase mb-1">{label}</p>
+      <div className="flex items-center justify-between mb-1">
+        <p className="font-medium text-gray-500 uppercase">{label}</p>
+        {!score.error && (
+          <button
+            onClick={() => setShowReasons((v) => !v)}
+            className="text-blue-600 hover:underline text-xs"
+          >
+            {showReasons ? 'Hide reasons' : 'Show reasons'}
+          </button>
+        )}
+      </div>
+
       {score.error ? (
         <p className="text-red-600 mb-1">Judge error: {score.error}</p>
       ) : (
-        <div className="space-y-0.5">
+        <div className="space-y-1.5">
           {DIMENSIONS.map((dim) => (
-            <p key={dim} className="text-gray-700">
-              <span className="capitalize font-medium">{dim}:</span> {score[dim]?.score?.toFixed(2)}
-            </p>
+            <div key={dim}>
+              <p className="text-gray-700">
+                <span className="capitalize font-medium">{dim}:</span> {score[dim]?.score?.toFixed(2)}
+              </p>
+              {showReasons && score[dim]?.reason && (
+                <p className="text-gray-500 pl-2 mt-0.5 italic">{score[dim].reason}</p>
+              )}
+            </div>
           ))}
         </div>
       )}

@@ -18,6 +18,7 @@ class JudgeConfig(BaseModel):
 class EvalRunCreate(BaseModel):
     dataset_id: uuid.UUID
     target_model: str
+    system_prompt: str | None = None
     judge_config: JudgeConfig = JudgeConfig()
 
 
@@ -25,6 +26,7 @@ class EvalRunResponse(BaseModel):
     id: uuid.UUID
     dataset_id: uuid.UUID
     target_model: str
+    system_prompt: str | None
     status: RunStatus
     judge_config: dict
     calibration_report: dict | None
