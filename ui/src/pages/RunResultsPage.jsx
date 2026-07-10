@@ -24,6 +24,16 @@ export default function RunResultsPage() {
   const [error, setError] = useState(null)
   const [expanded, setExpanded] = useState({})
   const intervalRef = useRef(null)
+  const [totalCases, setTotalCases] = useState(null)
+  const [completedCount, setCompletedCount] = useState(0)
+
+
+  useEffect(() => {
+    if (!run?.dataset_id) return
+    api.listTestCases(run.dataset_id)
+      .then((cases) => setTotalCases(cases.length))
+      .catch(() => {}) // non-critical — progress bar just won't show a total
+  }, [run?.dataset_id])
 
   useEffect(() => {
     let cancelled = false
@@ -36,6 +46,12 @@ export default function RunResultsPage() {
 
         if (runData.status === 'completed' || runData.status === 'failed') {
           clearInterval(intervalRef.current)
+        }
+
+        if (runData.status === 'running' || runData.status === 'pending') {
+          api.getRunResults(id)
+            .then((partial) => { if (!cancelled) setCompletedCount(partial.length) })
+            .catch(() => {})
         }
 
         if (runData.status === 'completed') {
@@ -105,11 +121,18 @@ export default function RunResultsPage() {
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <span className="text-sm font-medium text-blue-800">
-              {run.status === 'pending' ? 'Queued, about to start…' : 'Evaluation running…'}
+              {run.status === 'pending'
+                ? 'Queued, about to start…'
+                : totalCases
+                  ? `Evaluating case ${completedCount} of ${totalCases}…`
+                  : 'Evaluation running…'}
             </span>
           </div>
           <div className="h-1.5 bg-blue-100 rounded overflow-hidden">
-            <div className="h-full bg-blue-500 animate-pulse w-full" />
+            <div
+              className="h-full bg-blue-500 transition-all duration-500"
+              style={{ width: totalCases ? `${(completedCount / totalCases) * 100}%` : '15%' }}
+            />
           </div>
           <p className="text-xs text-blue-600 mt-2">Checking for updates every 3 seconds</p>
         </div>

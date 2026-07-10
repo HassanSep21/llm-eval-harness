@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
+import Papa from 'papaparse'
 
 export default function DatasetsPage() {
   const { id } = useParams()
@@ -167,12 +168,87 @@ function CreateDatasetForm({ onCreated, onCancel }) {
   )
 }
 
+// ---- CSV Dataset ----
+function CsvUploadForm({ datasetId, onImported }) {
+  const [uploading, setUploading] = useState(false)
+  const [result, setResult] = useState(null) // { created, skipped, errors }
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = '' // allow re-selecting the same file later
+
+    setUploading(true)
+    setResult(null)
+
+    const text = await file.text()
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true })
+
+    let created = 0
+    let skipped = 0
+    const errors = []
+
+    for (const row of parsed.data) {
+      const input = (row.input || '').trim()
+      if (!input) { skipped++; continue }
+
+      const expectedOutput = (row.expected_output || '').trim() || null
+      const pattern = (row.pattern || '').trim()
+      const metadata = pattern ? { pattern } : null
+
+      try {
+        await api.createTestCase(datasetId, { input, expected_output: expectedOutput, metadata })
+        created++
+      } catch (err) {
+        skipped++
+        errors.push(`"${input.slice(0, 40)}...": ${err.message}`)
+      }
+    }
+
+    setResult({ created, skipped, errors })
+    setUploading(false)
+    if (created > 0) onImported()
+  }
+
+  return (
+    <div className="mb-4 p-4 border border-gray-200 rounded bg-white">
+      <p className="text-sm font-medium text-gray-700 mb-1">Import from CSV</p>
+      <p className="text-xs text-gray-500 mb-2">
+        Columns: <code className="bg-gray-100 px-1 rounded">input</code> (required),{' '}
+        <code className="bg-gray-100 px-1 rounded">expected_output</code>,{' '}
+        <code className="bg-gray-100 px-1 rounded">pattern</code> (both optional). First row must be headers.
+      </p>
+      <input
+        type="file"
+        accept=".csv"
+        onChange={handleFile}
+        disabled={uploading}
+        className="text-sm"
+      />
+      {uploading && <p className="text-sm text-gray-500 mt-2">Importing…</p>}
+      {result && (
+        <p className={`text-sm mt-2 ${result.skipped > 0 ? 'text-yellow-700' : 'text-green-700'}`}>
+          Imported {result.created} test case{result.created === 1 ? '' : 's'}
+          {result.skipped > 0 && `, skipped ${result.skipped}`}.
+          {result.errors.length > 0 && (
+            <span className="block text-xs text-red-600 mt-1">
+              {result.errors.slice(0, 3).join(' · ')}
+              {result.errors.length > 3 && ` (+${result.errors.length - 3} more)`}
+            </span>
+          )}
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ---- Detail view ----
 
 function DatasetDetail({ datasetId }) {
   const [dsState, setDsState] = useState({ loading: true, error: null, data: null })
   const [casesState, setCasesState] = useState({ loading: true, error: null, data: null })
   const [showForm, setShowForm] = useState(false)
+  const [showCsv, setShowCsv] = useState(false)
   const navigate = useNavigate()
 
   const loadDataset = useCallback(() => {
@@ -222,17 +298,24 @@ function DatasetDetail({ datasetId }) {
 
       <div className="flex items-center justify-between mt-6 mb-3">
         <h2 className="font-medium text-gray-700">Test Cases</h2>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
-        >
-          {showForm ? 'Close' : '+ Add Test Case'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowCsv((v) => !v)}
+            className="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
+          >
+            {showCsv ? 'Close' : 'Import CSV'}
+          </button>
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+          >
+            {showForm ? 'Close' : '+ Add Test Case'}
+          </button>
+        </div>
       </div>
 
-      {showForm && (
-        <CreateTestCaseForm datasetId={datasetId} onCreated={loadCases} />
-      )}
+      {showCsv && <CsvUploadForm datasetId={datasetId} onImported={loadCases} />}
+      {showForm && <CreateTestCaseForm datasetId={datasetId} onCreated={loadCases} />}
 
       {casesState.error && (
         <div className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded mb-3">

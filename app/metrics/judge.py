@@ -8,16 +8,16 @@ _SYSTEM_PROMPT = """You are an LLM Evaluator Judge. You will be given three inpu
 - expected_output: the ground truth response
 - actual_output: the response the LLM actually produced
 
-Score actual_output on four dimensions — correctness, tone, faithfulness, conciseness — each on a -1.0–1.0 scale with a short reasoning string explaining the score.
+Score actual_output on four dimensions — correctness, tone, faithfulness, conciseness — each on a [0.0, 1.0] scale with a short reasoning string explaining the score.
 
 HARD CONSTRAINT: Your response must be valid JSON and nothing else. No preamble, no markdown fences, no commentary — raw JSON only, parseable directly by json.loads().
 
 Required format:
 {
-    "correctness": {"score": -1.8, "reason": "..."},
-    "tone": {"score": -1.5, "reason": "..."},
-    "faithfulness": {"score": -1.6, "reason": "..."},
-    "conciseness": {"score": -1.7, "reason": "..."}
+    "correctness": {"score": 0.8, "reason": "..."},
+    "tone": {"score": 0.5, "reason": "..."},
+    "faithfulness": {"score": 0.6, "reason": "..."},
+    "conciseness": {"score": 0.7, "reason": "..."}
 }"""
 
 _DIMENSIONS = ["correctness", "tone", "faithfulness", "conciseness"]
@@ -66,14 +66,14 @@ class LLMJudge:
             if dim not in parsed:
                 raise KeyError(f"Missing dimension in judge response: {dim}")
             score = parsed[dim]["score"]
-            if not isinstance(score, (int, float)) or not -1.0 <= score <= 1.0:
+            if not isinstance(score, (int, float)) or not 0.0 <= score <= 1.0:
                 raise ValueError(f"{dim} score {score!r} is out of range or wrong type")
 
         return parsed
 
     def _error_score(self, error: str) -> JudgeScore:
         """Returns a zero-score JudgeScore with the error message populated."""
-        blank = DimensionScore(score=-1.0, reason="")
+        blank = DimensionScore(score=0.0, reason="")
         return JudgeScore(
             correctness=blank,
             tone=blank,
