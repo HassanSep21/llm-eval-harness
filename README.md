@@ -374,8 +374,8 @@ Adding a new metric requires only implementing the `Metric` ABC and calling `reg
 
 ```bash
 # Database
-POSTGRES_PASSWORD=yourpassword
-DATABASE_URL=postgresql+asyncpg://eval_user:examplename@db:5432/llm_eval
+POSTGRES_PASSWORD=changeme
+DATABASE_URL=postgresql+asyncpg://eval_user:changeme@db:5432/llm_eval
 
 # Ollama
 OLLAMA_BASE_URL=http://ollama:11434
@@ -448,7 +448,7 @@ llm-eval-harness/
 │   └── services/
 │       ├── runner.py                # async background eval loop
 │       └── regression.py            # run comparison + verdict
-├── ui/                              # React + Vite + Tailwind frontend
+├── ui/                               # React + Vite + Tailwind frontend
 │   ├── src/
 │   │   ├── main.jsx                 # React root + router
 │   │   ├── App.jsx                  # route definitions
@@ -456,10 +456,10 @@ llm-eval-harness/
 │   │   ├── components/
 │   │   │   └── Navbar.jsx
 │   │   └── pages/
-│   │       ├── DatasetsPage.jsx     # list/detail, create/delete flows
-│   │       ├── NewRunPage.jsx       # dataset + model + judge config form
-│   │       ├── RunResultsPage.jsx   # live polling, per-case results
-│   │       └── RegressionPage.jsx   # run comparison + verdict
+│   │       ├── DatasetsPage.jsx      # list/detail, create/delete flows
+│   │       ├── NewRunPage.jsx        # dataset + model + judge config form
+│   │       ├── RunResultsPage.jsx    # live polling, per-case results
+│   │       └── RegressionPage.jsx    # run comparison + verdict
 │   ├── vite.config.js               # dev server + /api proxy to :8000
 │   ├── tailwind.config.js
 │   └── package.json
