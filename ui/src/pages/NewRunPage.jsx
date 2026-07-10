@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 
 const ALL_METRICS = ['exact_match', 'contains', 'regex_match', 'rouge_l']
-const DEFAULT_METRICS = ['exact_match', 'rouge_l']
+const DEFAULT_METRICS = ['rouge_l']
 
 export default function NewRunPage() {
   const navigate = useNavigate()
@@ -14,6 +14,7 @@ export default function NewRunPage() {
 
   const [datasetId, setDatasetId] = useState('')
   const [targetModel, setTargetModel] = useState('')
+  const [secondaryModel, setSecondaryModel] = useState('')
   const [systemPrompt, setSystemPrompt] = useState('')
   const [dualJudge, setDualJudge] = useState(true)
   const [metrics, setMetrics] = useState(DEFAULT_METRICS)
@@ -64,6 +65,7 @@ export default function NewRunPage() {
         judge_config: {
           primary_backend: 'groq',
           secondary_backend: dualJudge ? 'ollama' : null,
+          secondary_model: dualJudge ? (secondaryModel || null) : null,
           dual_judge: dualJudge,
           metrics,
         },
@@ -167,6 +169,24 @@ export default function NewRunPage() {
             Dual judge (Groq + local Ollama, with agreement scoring)
           </label>
         </div>
+
+        {dualJudge && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Judge model override (optional)
+            </label>
+            <select
+              value={secondaryModel}
+              onChange={(e) => setSecondaryModel(e.target.value)}
+              className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm bg-white"
+            >
+              <option value="">Use default (.env setting)</option>
+              {models.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Metrics</label>
