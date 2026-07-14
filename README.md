@@ -570,8 +570,11 @@ llm-eval-harness/
 │   │   ├── main.jsx                    # React root + router
 │   │   ├── App.jsx                     # route definitions
 │   │   ├── api.js                      # shared fetch client
+│   │   ├── index.css
 │   │   ├── components/
-│   │   │   └── Navbar.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── Starfield.jsx
+│   │   │   └── ui.jsx
 │   │   └── pages/
 │   │       ├── DatasetsPage.jsx        # list/detail, create/delete, CSV import
 │   │       ├── NewRunPage.jsx          # dataset + target model + system prompt +
@@ -581,7 +584,8 @@ llm-eval-harness/
 │   │       └── RegressionPage.jsx      # run comparison + verdict
 │   ├── vite.config.js                  # dev server + /api proxy to :8000
 │   ├── tailwind.config.js
-│   └── package.json
+│   ├── package.json
+│   └── index.html
 ├── alembic/                            # async migrations
 ├── tests/
 │   ├── test_metrics.py                 # deterministic metric unit tests
