@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar.jsx'
+import Starfield from './components/Starfield.jsx'
 import DatasetsPage from './pages/DatasetsPage.jsx'
 import NewRunPage from './pages/NewRunPage.jsx'
 import RunResultsPage from './pages/RunResultsPage.jsx'
@@ -7,18 +8,24 @@ import RegressionPage from './pages/RegressionPage.jsx'
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <Routes>
-          <Route path="/" element={<Navigate to="/datasets" replace />} />
-          <Route path="/datasets" element={<DatasetsPage />} />
-          <Route path="/datasets/:id" element={<DatasetsPage />} />
-          <Route path="/runs/new" element={<NewRunPage />} />
-          <Route path="/runs/:id" element={<RunResultsPage />} />
-          <Route path="/regression" element={<RegressionPage />} />
-        </Routes>
-      </main>
+    <div className="min-h-screen relative">
+      <div className="fixed inset-0 bg-atmosphere">
+        <Starfield />
+      </div>
+
+      <div className="relative z-10">
+        <Navbar />
+        <main className="max-w-[1200px] mx-auto px-6 py-10">
+          <Routes>
+            <Route path="/" element={<Navigate to="/datasets" replace />} />
+            <Route path="/datasets" element={<DatasetsPage />} />
+            <Route path="/datasets/:id" element={<DatasetsPage />} />
+            <Route path="/runs/new" element={<NewRunPage />} />
+            <Route path="/runs/:id" element={<RunResultsPage />} />
+            <Route path="/regression" element={<RegressionPage />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   )
 }

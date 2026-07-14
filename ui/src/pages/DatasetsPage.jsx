@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import Papa from 'papaparse'
+import {
+  PageHeader, Card, Button, Field, TextInput, TextArea, Callout, EmptyState,
+} from '../components/ui.jsx'
 
 export default function DatasetsPage() {
   const { id } = useParams()
@@ -38,68 +41,62 @@ function DatasetList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-gray-800">Datasets</h1>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
-        >
-          {showForm ? 'Cancel' : '+ New Dataset'}
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Test data"
+        title="Datasets"
+        description="Collections of test cases used as the input side of an eval run."
+        action={
+          <Button variant="outline" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? 'Cancel' : '+ New dataset'}
+          </Button>
+        }
+      />
 
       {showForm && (
-        <CreateDatasetForm
-          onCreated={() => { setShowForm(false); load() }}
-          onCancel={() => setShowForm(false)}
-        />
+        <div className="mb-6">
+          <CreateDatasetForm
+            onCreated={() => { setShowForm(false); load() }}
+            onCancel={() => setShowForm(false)}
+          />
+        </div>
       )}
 
       {state.error && (
-        <div className="mb-4 px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded">
-          Couldn't load datasets: {state.error}
-        </div>
+        <div className="mb-4"><Callout tone="error">Couldn't load datasets: {state.error}</Callout></div>
       )}
 
-      {state.loading && <p className="text-gray-500 text-sm">Loading datasets…</p>}
+      {state.loading && <p className="text-fog text-sm">Loading datasets…</p>}
 
       {!state.loading && !state.error && state.data?.length === 0 && (
-        <div className="text-center py-12 border border-dashed border-gray-300 rounded">
-          <p className="text-gray-500 mb-3">No datasets yet.</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="text-sm font-medium text-blue-600 hover:underline"
-          >
-            Create your first dataset
-          </button>
-        </div>
+        <EmptyState
+          title="No datasets yet."
+          action={
+            <button onClick={() => setShowForm(true)} className="text-sm font-medium text-blueprint hover:text-frost underline underline-offset-4 decoration-blueprint/30">
+              Create your first dataset
+            </button>
+          }
+        />
       )}
 
       {!state.loading && state.data?.length > 0 && (
-        <div className="divide-y divide-gray-200 border border-gray-200 rounded">
+        <div className="grid gap-3">
           {state.data.map((ds) => (
-            <div
+            <Card
               key={ds.id}
               onClick={() => navigate(`/datasets/${ds.id}`)}
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              className="cursor-pointer hover:ring-[rgba(186,215,247,0.22)] transition-shadow flex items-center justify-between"
             >
               <div>
-                <p className="font-medium text-gray-800">{ds.name}</p>
-                {ds.description && (
-                  <p className="text-sm text-gray-500">{ds.description}</p>
-                )}
-                <p className="text-xs text-gray-400 mt-1">
-                  {ds.test_case_count ?? 0} test case{ds.test_case_count === 1 ? '' : 's'} · created{' '}
-                  {new Date(ds.created_at).toLocaleDateString()}
+                <p className="font-medium text-frost">{ds.name}</p>
+                {ds.description && <p className="text-sm text-fog mt-0.5">{ds.description}</p>}
+                <p className="text-xs text-mist/60 mt-1.5 font-mono">
+                  {ds.test_case_count ?? 0} test case{ds.test_case_count === 1 ? '' : 's'} · {new Date(ds.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <button
-                onClick={(e) => handleDelete(e, ds.id, ds.name)}
-                className="text-sm text-red-500 hover:text-red-700 px-2"
-              >
+              <Button variant="danger" onClick={(e) => handleDelete(e, ds.id, ds.name)}>
                 Delete
-              </button>
-            </div>
+              </Button>
+            </Card>
           ))}
         </div>
       )}
@@ -131,40 +128,34 @@ function CreateDatasetForm({ onCreated, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-4 p-4 border border-gray-200 rounded bg-white">
-      {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-        <input
-          autoFocus
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-          placeholder="customer-support-v1"
-        />
-      </div>
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Description (optional)</label>
-        <input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-          placeholder="Billing and refund queries"
-        />
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : 'Create'}
-        </button>
-        <button type="button" onClick={onCancel} className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800">
-          Cancel
-        </button>
-      </div>
-    </form>
+    <Card>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <Callout tone="error">{error}</Callout>}
+        <Field label="Name">
+          <TextInput
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="customer-support-v1"
+          />
+        </Field>
+        <Field label="Description (optional)">
+          <TextInput
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Billing and refund queries"
+          />
+        </Field>
+        <div className="flex items-center gap-3 pt-1">
+          <Button variant="primary" type="submit" disabled={saving}>
+            {saving ? 'Saving…' : 'Create'}
+          </Button>
+          <button type="button" onClick={onCancel} className="text-sm text-fog hover:text-mist">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Card>
   )
 }
 
@@ -211,34 +202,34 @@ function CsvUploadForm({ datasetId, onImported }) {
   }
 
   return (
-    <div className="mb-4 p-4 border border-gray-200 rounded bg-white">
-      <p className="text-sm font-medium text-gray-700 mb-1">Import from CSV</p>
-      <p className="text-xs text-gray-500 mb-2">
-        Columns: <code className="bg-gray-100 px-1 rounded">input</code> (required),{' '}
-        <code className="bg-gray-100 px-1 rounded">expected_output</code>,{' '}
-        <code className="bg-gray-100 px-1 rounded">pattern</code> (both optional). First row must be headers.
+    <Card>
+      <p className="text-sm font-medium text-frost mb-1">Import from CSV</p>
+      <p className="text-xs text-fog mb-3">
+        Columns: <code className="font-mono text-mist bg-[rgba(199,211,234,0.08)] px-1.5 py-0.5 rounded-badge">input</code> (required),{' '}
+        <code className="font-mono text-mist bg-[rgba(199,211,234,0.08)] px-1.5 py-0.5 rounded-badge">expected_output</code>,{' '}
+        <code className="font-mono text-mist bg-[rgba(199,211,234,0.08)] px-1.5 py-0.5 rounded-badge">pattern</code> (both optional). First row must be headers.
       </p>
       <input
         type="file"
         accept=".csv"
         onChange={handleFile}
         disabled={uploading}
-        className="text-sm"
+        className="text-sm text-fog file:mr-3 file:py-2 file:px-4 file:rounded-btn file:border-0 file:bg-[rgba(186,214,247,0.08)] file:text-white file:text-sm file:font-medium hover:file:bg-[rgba(186,214,247,0.14)] file:cursor-pointer cursor-pointer"
       />
-      {uploading && <p className="text-sm text-gray-500 mt-2">Importing…</p>}
+      {uploading && <p className="text-sm text-fog mt-2">Importing…</p>}
       {result && (
-        <p className={`text-sm mt-2 ${result.skipped > 0 ? 'text-yellow-700' : 'text-green-700'}`}>
+        <p className={`text-sm mt-3 ${result.skipped > 0 ? 'text-ice' : 'text-blueprint'}`}>
           Imported {result.created} test case{result.created === 1 ? '' : 's'}
           {result.skipped > 0 && `, skipped ${result.skipped}`}.
           {result.errors.length > 0 && (
-            <span className="block text-xs text-red-600 mt-1">
+            <span className="block text-xs text-ember/90 mt-1.5">
               {result.errors.slice(0, 3).join(' · ')}
               {result.errors.length > 3 && ` (+${result.errors.length - 3} more)`}
             </span>
           )}
         </p>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -278,83 +269,73 @@ function DatasetDetail({ datasetId }) {
     }
   }
 
-  if (dsState.loading) return <p className="text-gray-500 text-sm">Loading dataset…</p>
+  if (dsState.loading) return <p className="text-fog text-sm">Loading dataset…</p>
   if (dsState.error) {
-    return (
-      <div className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded">
-        Couldn't load dataset: {dsState.error}
-      </div>
-    )
+    return <Callout tone="error">Couldn't load dataset: {dsState.error}</Callout>
   }
 
   return (
     <div>
-      <button onClick={() => navigate('/datasets')} className="text-sm text-blue-600 hover:underline mb-3">
+      <button onClick={() => navigate('/datasets')} className="text-sm text-mist hover:text-frost mb-4 inline-flex items-center gap-1">
         ← All datasets
       </button>
 
-      <h1 className="text-xl font-semibold text-gray-800">{dsState.data.name}</h1>
-      {dsState.data.description && <p className="text-gray-500 mb-4">{dsState.data.description}</p>}
+      <PageHeader
+        eyebrow="Dataset"
+        title={dsState.data.name}
+        description={dsState.data.description}
+      />
 
-      <div className="flex items-center justify-between mt-6 mb-3">
-        <h2 className="font-medium text-gray-700">Test Cases</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-lg text-frost">Test cases</h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowCsv((v) => !v)}
-            className="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-50"
-          >
+          <Button variant="outline" onClick={() => setShowCsv((v) => !v)}>
             {showCsv ? 'Close' : 'Import CSV'}
-          </button>
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
-          >
-            {showForm ? 'Close' : '+ Add Test Case'}
-          </button>
+          </Button>
+          <Button variant="outline" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? 'Close' : '+ Add test case'}
+          </Button>
         </div>
       </div>
 
-      {showCsv && <CsvUploadForm datasetId={datasetId} onImported={loadCases} />}
-      {showForm && <CreateTestCaseForm datasetId={datasetId} onCreated={loadCases} />}
+      {showCsv && <div className="mb-4"><CsvUploadForm datasetId={datasetId} onImported={loadCases} /></div>}
+      {showForm && <div className="mb-4"><CreateTestCaseForm datasetId={datasetId} onCreated={loadCases} /></div>}
 
       {casesState.error && (
-        <div className="px-3 py-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded mb-3">
-          Couldn't load test cases: {casesState.error}
-        </div>
+        <div className="mb-3"><Callout tone="error">Couldn't load test cases: {casesState.error}</Callout></div>
       )}
 
-      {casesState.loading && <p className="text-gray-500 text-sm">Loading test cases…</p>}
+      {casesState.loading && <p className="text-fog text-sm">Loading test cases…</p>}
 
       {!casesState.loading && !casesState.error && casesState.data?.length === 0 && (
-        <div className="text-center py-10 border border-dashed border-gray-300 rounded">
-          <p className="text-gray-500 mb-3">No test cases yet.</p>
-          <button onClick={() => setShowForm(true)} className="text-sm font-medium text-blue-600 hover:underline">
-            Add your first test case
-          </button>
-        </div>
+        <EmptyState
+          title="No test cases yet."
+          action={
+            <button onClick={() => setShowForm(true)} className="text-sm font-medium text-blueprint hover:text-frost underline underline-offset-4 decoration-blueprint/30">
+              Add your first test case
+            </button>
+          }
+        />
       )}
 
       {!casesState.loading && casesState.data?.length > 0 && (
-        <div className="divide-y divide-gray-200 border border-gray-200 rounded">
+        <div className="grid gap-2.5">
           {casesState.data.map((tc) => (
-            <div key={tc.id} className="px-4 py-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-800"><span className="font-medium">Input:</span> {tc.input}</p>
+            <Card key={tc.id} className="!p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-frost"><span className="font-medium text-mist">Input</span> — {tc.input}</p>
                   {tc.expected_output && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">Expected:</span> {tc.expected_output}
+                    <p className="text-sm text-fog mt-1.5">
+                      <span className="font-medium text-mist">Expected</span> — {tc.expected_output}
                     </p>
                   )}
                 </div>
-                <button
-                  onClick={() => handleDeleteCase(tc.id)}
-                  className="text-sm text-red-500 hover:text-red-700 px-2 shrink-0"
-                >
+                <Button variant="danger" className="shrink-0" onClick={() => handleDeleteCase(tc.id)}>
                   Delete
-                </button>
+                </Button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -394,47 +375,38 @@ function CreateTestCaseForm({ datasetId, onCreated }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mb-4 p-4 border border-gray-200 rounded bg-white">
-      {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Input</label>
-        <textarea
-          autoFocus
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-          rows={2}
-          placeholder="What is your refund policy?"
-        />
-      </div>
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Expected output (optional)</label>
-        <textarea
-          value={expectedOutput}
-          onChange={(e) => setExpectedOutput(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-          rows={2}
-          placeholder="We offer a 30-day money-back guarantee..."
-        />
-      </div>
-      <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Regex pattern (optional — only needed for the regex_match metric)
-        </label>
-        <input
-          value={pattern}
-          onChange={(e) => setPattern(e.target.value)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm font-mono"
-          placeholder="^\d+$"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={saving}
-        className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
-      >
-        {saving ? 'Saving…' : 'Add Test Case'}
-      </button>
-    </form>
+    <Card>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && <Callout tone="error">{error}</Callout>}
+        <Field label="Input">
+          <TextArea
+            autoFocus
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            rows={2}
+            placeholder="What is your refund policy?"
+          />
+        </Field>
+        <Field label="Expected output (optional)">
+          <TextArea
+            value={expectedOutput}
+            onChange={(e) => setExpectedOutput(e.target.value)}
+            rows={2}
+            placeholder="We offer a 30-day money-back guarantee..."
+          />
+        </Field>
+        <Field label="Regex pattern (optional — only used by the regex_match metric)">
+          <TextInput
+            value={pattern}
+            onChange={(e) => setPattern(e.target.value)}
+            className="font-mono"
+            placeholder="^\d+$"
+          />
+        </Field>
+        <Button variant="primary" type="submit" disabled={saving}>
+          {saving ? 'Saving…' : 'Add test case'}
+        </Button>
+      </form>
+    </Card>
   )
 }

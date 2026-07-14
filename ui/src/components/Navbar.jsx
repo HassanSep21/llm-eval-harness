@@ -8,23 +8,30 @@ const links = [
 
 export default function Navbar() {
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-4 flex items-center h-14 gap-6">
-        <span className="font-semibold text-gray-800">LLM Eval Harness</span>
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `text-sm font-medium ${
-                isActive ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900'
-              }`
-            }
-          >
-            {link.label}
-          </NavLink>
-        ))}
+    <header className="sticky top-0 z-20 backdrop-blur-md bg-[rgba(5,6,15,0.75)] ring-1 ring-[rgba(186,215,247,0.10)]">
+      <div className="max-w-[1200px] mx-auto px-6 flex items-center h-16 gap-8">
+        <span className="font-display text-[17px] text-ice tracking-tight">
+          LLM Eval<span className="text-blueprint"> Harness</span>
+        </span>
+
+        <nav className="flex items-center gap-1">
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                `relative px-3.5 py-2 rounded-btn text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'text-white bg-[rgba(186,214,247,0.09)] ring-1 ring-[rgba(186,215,247,0.14)]'
+                    : 'text-mist hover:text-white hover:bg-[rgba(186,214,247,0.05)]'
+                }`
+              }
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
       </div>
-    </nav>
+    </header>
   )
 }

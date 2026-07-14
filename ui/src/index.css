@@ -1,3 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-canvas text-frost font-sans antialiased;
+}
+
+/* Ambient page atmosphere: sparse dot-grid + top spotlight, sits behind all content */
+.bg-atmosphere {
+  background-image:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(124, 145, 182, 0.16), transparent 60%),
+    radial-gradient(rgba(186, 215, 247, 0.16) 1px, transparent 1px);
+  background-size: auto, 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 20%, black 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 20%, black 40%, transparent 100%);
+}
+
+/* Starfield particles — drift upward slightly and fade in/out on an independent loop */
+.star {
+  position: absolute;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+  animation-name: star-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes star-drift {
+  0% { opacity: 0; transform: translateY(0); }
+  15% { opacity: var(--star-op, 0.7); }
+  80% { opacity: var(--star-op, 0.7); }
+  100% { opacity: 0; transform: translateY(calc(-1 * var(--star-drift, 16px))); }
+}
+
+::selection {
+  background: rgba(102, 58, 243, 0.35);
+  color: #ffffff;
+}
+
+/* Thin, quiet scrollbar consistent with the glass aesthetic */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(186, 215, 247, 0.14);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(186, 215, 247, 0.24); background-clip: content-box; }
+
+/* Keyboard focus stays visible everywhere — glow ring instead of a hard outline */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 58, 243, 0.6), 0 0 0 4px rgba(102, 58, 243, 0.18);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .star {
+    animation: none !important;
+    opacity: 0.4;
+  }
+}
