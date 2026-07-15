@@ -223,9 +223,9 @@ Create datasets, add test cases individually or in bulk via CSV import, and brow
 - **CSV import** accepts a file with `input` (required), `expected_output` (optional), and `pattern` (optional, used by the `regex_match` metric) columns. Invalid rows are skipped and reported, not silently dropped.
 - Each test case can optionally include a regex `pattern` in its metadata for use with the `regex_match` metric.
 
-<!-- screenshot: datasets list view -->
-<!-- screenshot: dataset detail view with test cases -->
-<!-- screenshot: CSV import in progress -->
+![dataset_list_view](assets/dataset_list_view.png)
+![dataset_detail_view](assets/dataset_detail_view.png)
+![csv_import](assets/csv_import.png)
 
 ### New Run
 
@@ -240,7 +240,7 @@ Configure and launch an evaluation:
 
 Submitting redirects immediately to the Run Results screen for that run.
 
-<!-- screenshot: new run form -->
+![newrun_form](assets/newrun_form.png)
 
 ### Run Results
 
@@ -252,9 +252,9 @@ Live-polls the backend every 3 seconds while a run is in progress.
 - **Judge reasoning toggle** — each judge block has a "Show reasons" toggle to reveal the natural-language justification behind each dimension score, independently for primary and secondary judge — useful for understanding *why* two judges disagree, not just that they did
 - **Low-confidence flag** — highlighted whenever the two judges disagree beyond `JUDGE_DISAGREEMENT_THRESHOLD` on any dimension
 
-<!-- screenshot: run in progress with progress bar -->
-<!-- screenshot: completed run with calibration report -->
-<!-- screenshot: per-case result with judge reasons expanded -->
+![testrunning](assets/testrunning.png)
+![runcompleted](assets/runcompleted.png)
+![reasonings](assets/reasonings.png)
 
 ### Regression
 
@@ -267,7 +267,7 @@ Compare any two completed runs on the same dataset:
 
 Reachable directly, or via "Compare this run" from any completed Run Results page.
 
-<!-- screenshot: regression comparison with verdict and deltas -->
+![regression_report](assets/regression_report.png)
 
 ---
 
