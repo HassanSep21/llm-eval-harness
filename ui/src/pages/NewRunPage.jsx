@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import {
-  PageHeader, Card, Button, Field, TextArea, Select, Checkbox, Callout,
+  PageHeader, Card, HeroCard, Button, Field, TextArea, Select, Checkbox, Callout, SkeletonCard,
 } from '../components/ui.jsx'
 
 const ALL_METRICS = ['exact_match', 'contains', 'regex_match', 'rouge_l']
@@ -85,7 +85,11 @@ export default function NewRunPage() {
   }
 
   if (!datasets || !models) {
-    return <p className="text-fog text-sm">Loading…</p>
+    return (
+      <div className="max-w-xl mx-auto">
+        <SkeletonCard lines={4} />
+      </div>
+    )
   }
 
   return (
@@ -109,7 +113,7 @@ export default function NewRunPage() {
         </div>
       )}
 
-      <Card>
+      <HeroCard>
         <form onSubmit={handleSubmit} className="space-y-5">
           {submitError && <Callout tone="error">{submitError}</Callout>}
 
@@ -184,7 +188,7 @@ export default function NewRunPage() {
             {submitting ? 'Starting run…' : 'Start run'}
           </Button>
         </form>
-      </Card>
+      </HeroCard>
     </div>
   )
 }

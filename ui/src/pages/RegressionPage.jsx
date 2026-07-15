@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../api.js'
-import { PageHeader, Card, Button, Field, Select, Callout, StatusPill } from '../components/ui.jsx'
+import { PageHeader, Card, HeroCard, Button, Field, Callout, StatusPill, StatNumber, SearchableSelect, SkeletonCard, Skeleton } from '../components/ui.jsx'
 
 function DeltaBar({ dim, value }) {
   const positive = value >= 0
@@ -24,6 +24,57 @@ function DeltaBar({ dim, value }) {
   )
 }
 
+function CaseDeltaList({ title, color, cases, testCaseMap }) {
+  return (
+    <Card className="!p-5">
+      <h2 className={`font-display text-base mb-4 ${color}`}>
+        {title} ({cases.length})
+      </h2>
+      {cases.length === 0 ? (
+        <p className="text-sm text-fog">None</p>
+      ) : (
+        <div className="space-y-4">
+          {cases.map((cd) => {
+            const tc = testCaseMap[cd.test_case_id]
+            return (
+              <div 
+                key={cd.test_case_id} 
+                className="text-sm border-t border-[rgba(186,215,247,0.10)] pt-3 first:border-t-0 first:pt-0"
+              >
+                <p className="text-frost">{tc?.input ?? '(input unavailable)'}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {Object.entries(cd.dimension_deltas).map(([dim, val]) => {
+                    let badgeStyle = '';
+                    let prefix = '';
+
+                    if (val > 0) {
+                      badgeStyle = 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20';
+                      prefix = '+';
+                    } else if (val < 0) {
+                      badgeStyle = 'bg-[rgba(228,109,76,0.08)] text-ember ring-[rgba(228,109,76,0.22)]';
+                    } else {
+                      badgeStyle = 'bg-[rgba(186,214,247,0.06)] text-mist ring-[rgba(186,215,247,0.14)]';
+                    }
+
+                    return (
+                      <span
+                        key={dim}
+                        className={`inline-flex items-center gap-1 rounded-badge px-2 py-0.5 text-xs font-medium ring-1 shadow-[inset_0_1px_1px_rgba(255,255,255,0.06)] ${badgeStyle}`}
+                      >
+                        {dim} {prefix}{val.toFixed(2)}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 export default function RegressionPage() {
   const [searchParams] = useSearchParams()
 
@@ -36,6 +87,7 @@ export default function RegressionPage() {
   const [report, setReport] = useState(null)
   const [comparing, setComparing] = useState(false)
   const [compareError, setCompareError] = useState(null)
+  const [testCaseMap, setTestCaseMap] = useState({})
 
   useEffect(() => {
     api
@@ -51,21 +103,16 @@ export default function RegressionPage() {
   const handleCompare = async (e) => {
     e.preventDefault()
     setCompareError(null)
-
-    if (!runAId || !runBId) {
-      setCompareError('Pick two runs to compare.')
-      return
-    }
-    if (runAId === runBId) {
-      setCompareError('Pick two different runs.')
-      return
-    }
+    if (!runAId || !runBId) { setCompareError('Pick two runs to compare.'); return }
+    if (runAId === runBId) { setCompareError('Pick two different runs.'); return }
 
     setComparing(true)
     setReport(null)
     try {
       const data = await api.compareRuns(runAId, runBId)
       setReport(data)
+      const testCases = await api.listTestCases(data.dataset_id)
+      setTestCaseMap(Object.fromEntries(testCases.map((tc) => [tc.id, tc])))
     } catch (err) {
       setCompareError(err.message)
     } finally {
@@ -78,7 +125,13 @@ export default function RegressionPage() {
   }
 
   if (!runs) {
-    return <p className="text-fog text-sm">Loading…</p>
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Skeleton className="h-3 w-24 mb-3" />
+        <Skeleton className="h-7 w-48 mb-6" />
+        <SkeletonCard lines={3} />
+      </div>
+    )
   }
 
   return (
@@ -97,25 +150,27 @@ export default function RegressionPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Run A (baseline)">
-              <Select value={runAId} onChange={(e) => setRunAId(e.target.value)} disabled={runs.length === 0}>
-                <option value="">Select a run</option>
-                {runs.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.id.slice(0, 8)} · {r.target_model} · {new Date(r.created_at).toLocaleString()}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                value={runAId}
+                onChange={setRunAId}
+                placeholder="Search runs…"
+                options={runs.map((r) => ({
+                  value: r.id,
+                  label: `${r.id.slice(0, 8)} · ${r.target_model} · ${new Date(r.created_at).toLocaleString()}`,
+                }))}
+              />
             </Field>
 
             <Field label="Run B (comparison)">
-              <Select value={runBId} onChange={(e) => setRunBId(e.target.value)} disabled={runs.length === 0}>
-                <option value="">Select a run</option>
-                {runs.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.id.slice(0, 8)} · {r.target_model} · {new Date(r.created_at).toLocaleString()}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                value={runBId}
+                onChange={setRunBId}
+                placeholder="Search runs…"
+                options={runs.map((r) => ({
+                  value: r.id,
+                  label: `${r.id.slice(0, 8)} · ${r.target_model} · ${new Date(r.created_at).toLocaleString()}`,
+                }))}
+              />
             </Field>
           </div>
 
@@ -127,10 +182,10 @@ export default function RegressionPage() {
 
       {report && (
         <div className="space-y-5">
-          <Card className="flex items-center justify-between">
+          <HeroCard className="flex items-center justify-between">
             <span className="text-sm font-medium text-mist">Verdict</span>
             <StatusPill status={report.verdict} />
-          </Card>
+          </HeroCard>
 
           <Card>
             <h2 className="font-display text-base text-frost mb-4">Per-dimension delta</h2>
@@ -146,9 +201,9 @@ export default function RegressionPage() {
               <h2 className="font-display text-base text-frost mb-3">Calibration report</h2>
               <p className="text-sm text-fog mb-3">
                 Overall consistency:{' '}
-                <span className="font-medium text-frost">
+                <StatNumber className="text-lg font-medium">
                   {report.calibration_report.overall_consistency?.toFixed(2)}
-                </span>
+                </StatNumber>
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(report.calibration_report.dimension_agreement || {}).map(([dim, val]) => (
@@ -162,35 +217,18 @@ export default function RegressionPage() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Card>
-              <h2 className="font-display text-sm text-blueprint mb-2.5">
-                Improved cases ({report.improved_cases?.length ?? 0})
-              </h2>
-              {report.improved_cases?.length > 0 ? (
-                <ul className="text-sm text-fog space-y-1">
-                  {report.improved_cases.map((caseId) => (
-                    <li key={caseId} className="font-mono text-xs">{caseId}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-fog/60">None</p>
-              )}
-            </Card>
-
-            <Card>
-              <h2 className="font-display text-sm text-ember mb-2.5">
-                Regressed cases ({report.regressed_cases?.length ?? 0})
-              </h2>
-              {report.regressed_cases?.length > 0 ? (
-                <ul className="text-sm text-fog space-y-1">
-                  {report.regressed_cases.map((caseId) => (
-                    <li key={caseId} className="font-mono text-xs">{caseId}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-fog/60">None</p>
-              )}
-            </Card>
+            <CaseDeltaList
+              title="Improved Cases"
+              color="text-emerald-400"
+              cases={report.case_deltas.filter((cd) => cd.improved)}
+              testCaseMap={testCaseMap}
+            />
+            <CaseDeltaList
+              title="Regressed Cases"
+              color="text-ember"
+              cases={report.case_deltas.filter((cd) => cd.regressed)}
+              testCaseMap={testCaseMap}
+            />
           </div>
         </div>
       )}

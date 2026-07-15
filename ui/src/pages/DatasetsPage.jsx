@@ -4,6 +4,7 @@ import { api } from '../api.js'
 import Papa from 'papaparse'
 import {
   PageHeader, Card, Button, Field, TextInput, TextArea, Callout, EmptyState,
+  SkeletonCard, ConfirmDialog, Skeleton,
 } from '../components/ui.jsx'
 
 export default function DatasetsPage() {
@@ -16,6 +17,8 @@ export default function DatasetsPage() {
 function DatasetList() {
   const [state, setState] = useState({ loading: true, error: null, data: null })
   const [showForm, setShowForm] = useState(false)
+  const [query, setQuery] = useState('')
+  const [pendingDelete, setPendingDelete] = useState(null) // { id, name }
   const navigate = useNavigate()
 
   const load = useCallback(() => {
@@ -28,16 +31,20 @@ function DatasetList() {
 
   useEffect(() => { load() }, [load])
 
-  const handleDelete = async (e, datasetId, name) => {
-    e.stopPropagation()
-    if (!confirm(`Delete "${name}"? This also deletes all its test cases. This can't be undone.`)) return
+  const confirmDelete = async () => {
+    const target = pendingDelete
+    setPendingDelete(null)
     try {
-      await api.deleteDataset(datasetId)
+      await api.deleteDataset(target.id)
       load()
     } catch (err) {
       alert(`Failed to delete: ${err.message}`)
     }
   }
+
+  const filtered = query.trim()
+    ? state.data?.filter((ds) => ds.name.toLowerCase().includes(query.toLowerCase()))
+    : state.data
 
   return (
     <div>
@@ -65,7 +72,11 @@ function DatasetList() {
         <div className="mb-4"><Callout tone="error">Couldn't load datasets: {state.error}</Callout></div>
       )}
 
-      {state.loading && <p className="text-fog text-sm">Loading datasets…</p>}
+      {state.loading && (
+        <div className="grid gap-3">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+      )}
 
       {!state.loading && !state.error && state.data?.length === 0 && (
         <EmptyState
@@ -79,28 +90,67 @@ function DatasetList() {
       )}
 
       {!state.loading && state.data?.length > 0 && (
-        <div className="grid gap-3">
-          {state.data.map((ds) => (
-            <Card
-              key={ds.id}
-              onClick={() => navigate(`/datasets/${ds.id}`)}
-              className="cursor-pointer hover:ring-[rgba(186,215,247,0.22)] transition-shadow flex items-center justify-between"
-            >
-              <div>
-                <p className="font-medium text-frost">{ds.name}</p>
-                {ds.description && <p className="text-sm text-fog mt-0.5">{ds.description}</p>}
-                <p className="text-xs text-mist/60 mt-1.5 font-mono">
-                  {ds.test_case_count ?? 0} test case{ds.test_case_count === 1 ? '' : 's'} · {new Date(ds.created_at).toLocaleDateString()}
-                </p>
-              </div>
-              <Button variant="danger" onClick={(e) => handleDelete(e, ds.id, ds.name)}>
-                Delete
-              </Button>
-            </Card>
-          ))}
-        </div>
+        <>
+          {state.data.length > 5 && (
+            <TextInput
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search datasets…"
+              className="mb-4"
+            />
+          )}
+
+          {filtered.length === 0 ? (
+            <p className="text-sm text-fog">No datasets match "{query}".</p>
+          ) : (
+            <div className="grid gap-3">
+              {filtered.map((ds) => (
+                <DatasetRow
+                  key={ds.id}
+                  dataset={ds}
+                  onOpen={() => navigate(`/datasets/${ds.id}`)}
+                  onDelete={() => setPendingDelete({ id: ds.id, name: ds.name })}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title={`Delete "${pendingDelete?.name}"?`}
+        message="This also deletes all its test cases. This can't be undone."
+        confirmLabel="Delete dataset"
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
+  )
+}
+
+function DatasetRow({ dataset, onOpen, onDelete }) {
+  return (
+    <Card
+      role="link"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() }
+      }}
+      className="cursor-pointer hover:ring-[rgba(186,215,247,0.22)] transition-shadow flex items-center justify-between"
+    >
+      <div>
+        <p className="font-medium text-frost">{dataset.name}</p>
+        {dataset.description && <p className="text-sm text-fog mt-0.5">{dataset.description}</p>}
+        <p className="text-xs text-mist/60 mt-1.5 font-mono">
+          {dataset.test_case_count ?? 0} test case{dataset.test_case_count === 1 ? '' : 's'} · {new Date(dataset.created_at).toLocaleDateString()}
+        </p>
+      </div>
+      <Button variant="danger" onClick={(e) => { e.stopPropagation(); onDelete() }}>
+        Delete
+      </Button>
+    </Card>
   )
 }
 
@@ -240,6 +290,7 @@ function DatasetDetail({ datasetId }) {
   const [casesState, setCasesState] = useState({ loading: true, error: null, data: null })
   const [showForm, setShowForm] = useState(false)
   const [showCsv, setShowCsv] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState(null) // test case id
   const navigate = useNavigate()
 
   const loadDataset = useCallback(() => {
@@ -259,8 +310,9 @@ function DatasetDetail({ datasetId }) {
 
   useEffect(() => { loadDataset(); loadCases() }, [loadDataset, loadCases])
 
-  const handleDeleteCase = async (testCaseId) => {
-    if (!confirm('Delete this test case?')) return
+  const confirmDeleteCase = async () => {
+    const testCaseId = pendingDelete
+    setPendingDelete(null)
     try {
       await api.deleteTestCase(datasetId, testCaseId)
       loadCases()
@@ -269,7 +321,15 @@ function DatasetDetail({ datasetId }) {
     }
   }
 
-  if (dsState.loading) return <p className="text-fog text-sm">Loading dataset…</p>
+  if (dsState.loading) {
+    return (
+      <div className="max-w-2xl">
+        <Skeleton className="h-3 w-20 mb-3" />
+        <Skeleton className="h-7 w-64 mb-6" />
+        <SkeletonCard />
+      </div>
+    )
+  }
   if (dsState.error) {
     return <Callout tone="error">Couldn't load dataset: {dsState.error}</Callout>
   }
@@ -305,7 +365,11 @@ function DatasetDetail({ datasetId }) {
         <div className="mb-3"><Callout tone="error">Couldn't load test cases: {casesState.error}</Callout></div>
       )}
 
-      {casesState.loading && <p className="text-fog text-sm">Loading test cases…</p>}
+      {casesState.loading && (
+        <div className="grid gap-2.5">
+          <SkeletonCard lines={2} /><SkeletonCard lines={2} />
+        </div>
+      )}
 
       {!casesState.loading && !casesState.error && casesState.data?.length === 0 && (
         <EmptyState
@@ -331,7 +395,7 @@ function DatasetDetail({ datasetId }) {
                     </p>
                   )}
                 </div>
-                <Button variant="danger" className="shrink-0" onClick={() => handleDeleteCase(tc.id)}>
+                <Button variant="danger" className="shrink-0" onClick={() => setPendingDelete(tc.id)}>
                   Delete
                 </Button>
               </div>
@@ -339,6 +403,15 @@ function DatasetDetail({ datasetId }) {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Delete this test case?"
+        message="This can't be undone."
+        confirmLabel="Delete test case"
+        onConfirm={confirmDeleteCase}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }

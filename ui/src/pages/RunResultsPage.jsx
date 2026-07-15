@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
-import { Card, Callout, StatusPill, Spinner, Button, Badge } from '../components/ui.jsx'
+import { Card, HeroCard, Callout, StatusPill, Spinner, Button, Badge, StatNumber, SkeletonCard, Skeleton } from '../components/ui.jsx'
 
 function truncate(text, len = 80) {
   if (!text) return ''
@@ -20,6 +20,7 @@ export default function RunResultsPage() {
   const intervalRef = useRef(null)
   const [totalCases, setTotalCases] = useState(null)
   const [completedCount, setCompletedCount] = useState(0)
+  const [filter, setFilter] = useState('all') // 'all' | 'flagged' | 'errors'
 
 
   useEffect(() => {
@@ -84,7 +85,13 @@ export default function RunResultsPage() {
   }
 
   if (!run) {
-    return <p className="text-fog text-sm">Loading run…</p>
+    return (
+      <div>
+        <Skeleton className="h-6 w-32 mb-3" />
+        <Skeleton className="h-4 w-48 mb-6" />
+        <SkeletonCard lines={3} />
+      </div>
+    )
   }
 
   return (
@@ -130,13 +137,13 @@ export default function RunResultsPage() {
       {run.status === 'completed' && (
         <>
           {run.calibration_report && (
-            <Card className="mb-6">
+            <HeroCard className="mb-6">
               <h2 className="font-display text-base text-frost mb-3">Calibration report</h2>
               <p className="text-sm text-fog mb-3">
                 Overall consistency:{' '}
-                <span className="font-medium text-frost">
+                <StatNumber className="text-lg font-medium">
                   {run.calibration_report.overall_consistency?.toFixed(2)}
-                </span>
+                </StatNumber>
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {Object.entries(run.calibration_report.dimension_agreement || {}).map(([dim, val]) => (
@@ -146,35 +153,70 @@ export default function RunResultsPage() {
                   </div>
                 ))}
               </div>
-            </Card>
+            </HeroCard>
           )}
 
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-3">
             <h2 className="font-display text-base text-frost">Per-case results ({results?.length ?? 0})</h2>
-            <Button variant="outline" onClick={() => navigate(`/regression?runA=${run.id}`)}>
-              Compare this run →
-            </Button>
+            <div className="flex items-center gap-3">
+              {results && results.length > 0 && (
+                <div className="flex items-center gap-1 rounded-btn ring-1 ring-[rgba(186,215,247,0.12)] p-0.5">
+                  {[
+                    { id: 'all', label: 'All' },
+                    { id: 'flagged', label: 'Flagged' },
+                    { id: 'errors', label: 'Errors' },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => setFilter(f.id)}
+                      className={`px-3 py-1.5 rounded-btn text-xs font-medium transition-colors ${
+                        filter === f.id ? 'bg-[rgba(186,214,247,0.12)] text-white' : 'text-mist hover:text-frost'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <Button variant="outline" onClick={() => navigate(`/regression?runA=${run.id}`)}>
+                Compare this run →
+              </Button>
+            </div>
           </div>
 
-          {!results && <p className="text-fog text-sm">Loading results…</p>}
+          {!results && (
+            <div className="space-y-3">
+              <SkeletonCard lines={3} /><SkeletonCard lines={3} />
+            </div>
+          )}
 
           {results && results.length === 0 && (
             <p className="text-fog text-sm">No results recorded for this run.</p>
           )}
 
-          {results && results.length > 0 && (
-            <div className="space-y-3">
-              {results.map((r) => (
-                <ResultRow
-                  key={r.id}
-                  result={r}
-                  testCase={testCaseMap[r.test_case_id]}
-                  isExpanded={!!expanded[r.id]}
-                  onToggle={() => toggleExpanded(r.id)}
-                />
-              ))}
-            </div>
-          )}
+          {results && results.length > 0 && (() => {
+            const visible = results.filter((r) => {
+              if (filter === 'flagged') return r.low_confidence
+              if (filter === 'errors') return r.error || Object.values(r.metric_scores || {}).some((m) => m.passed === false)
+              return true
+            })
+            if (visible.length === 0) {
+              return <p className="text-fog text-sm">No results match this filter.</p>
+            }
+            return (
+              <div className="space-y-3">
+                {visible.map((r) => (
+                  <ResultRow
+                    key={r.id}
+                    result={r}
+                    testCase={testCaseMap[r.test_case_id]}
+                    isExpanded={!!expanded[r.id]}
+                    onToggle={() => toggleExpanded(r.id)}
+                  />
+                ))}
+              </div>
+            )
+          })()}
         </>
       )}
     </div>
